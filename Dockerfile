@@ -1,8 +1,8 @@
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-bionic
 
 RUN \
-   apt-get update && \
-   apt-get -y install \
+   apt-get update \
+   && apt-get -y install \
       xvfb \
       fontconfig \
       libssl1.0-dev \
@@ -21,4 +21,6 @@ RUN \
       libxcb1-dev \
       libxfixes-dev \
       libxrandr-dev \
-      libxrender-dev
+      libxrender-dev \
+   && apt-get clean \
+   && rm -rf /var/lib/apt/lists/*
