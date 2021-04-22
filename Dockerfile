@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-bionic
 
 RUN \
    apt-get update \
-   && apt-get -y install \
+      && apt-get install -y --no-install-recommends \
       xvfb \
       fontconfig \
       libssl1.0-dev \
