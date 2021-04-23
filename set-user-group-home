@@ -1,0 +1,73 @@
+#!/bin/sh
+# The goal of this script is to allow mapping of host user (the one running
+# docker), to the desired container user, as to enable the use of more
+# restrictive file permission (700 or 600)
+
+# does a group with name = EGROUP already exist ?
+EXISTING_GID=$( getent group $EGROUP | cut -f3 -d ':' )
+
+if [ ! -z $EXISTING_GID ]; then
+   if [ $EXISTING_GID != $EGID ]; then
+      # change id of the existing group
+      groupmod -gid $EGID $EGROUP
+   fi
+else
+   # create new group with id = EGID
+   addgroup -gid $EGID $EGROUP
+fi
+
+# does a user with name = EUSER already exist ?
+EXISTING_UID=$( getent passwd $EUSER | cut -f3 -d ':' )
+
+if [ ! -z $EXISTING_UID ]; then
+   if [ $EXISTING_UID != $EUID ]; then
+      if [ ! -z $EHOME ]; then
+         if [ $ENOLOGIN = "yes" ]; then
+            # update existing user, set shell = nologin, id = EUID,
+            # group = EGID, and home directory = EHOME
+            usermod -s /sbin/nologin -u $EUID -g $EGID -d $EHOME $EUSER
+         else
+            # update existing user, set shell = sh, id = EUID, group = EGID,
+            # and home directory = EHOME
+            usermod -s /bin/sh -u $EUID -g $EGID -d $EHOME $EUSER
+         fi
+      else
+         if [ $ENOLOGIN = "yes" ]; then
+            # update existing user, set shell = nologin, id = EUID
+            # and group = EGID
+            usermod -s /sbin/nologin -u $EUID -g $EGID $EUSER
+         else
+            # update existing user, set shell = sh, id = EUID
+            # and group = EGID
+            usermod -s /bin/sh -u $EUID -g $EGID $EUSER
+         fi
+      fi
+   fi
+else
+   if [ ! -z $EHOME ]; then
+      if [ $ENOLOGIN = "yes" ]; then
+         # create new user with nologin shell, id = EUID, group = EGID
+         # and home directory = EHOME
+         adduser --shell /sbin/nologin --uid $EUID --gid $EGID --home $EHOME --disabled-password --gecos "" $EUSER
+      else
+         # create new user with sh shell, id = EUID, group = EGID
+         # and home directory = EHOME
+         adduser --shell /bin/sh --uid $EUID ---gid $EGID --home $EHOME --disabled-password --gecos "" $EUSER
+      fi
+   else
+      if [ $ENOLOGIN = "yes" ]; then
+         # create new user with nologin shell, id = EUID and group = EGROUP
+         adduser --shell /sbin/nologin --uid $EUID --gid $EGID --disabled-password --gecos "" $EUSER
+      else
+         # create new user with sh shell, id = EUID and group = EGROUP
+         adduser --shell /bin/sh --uid $EUID --gid $EGID --disabled-password --gecos "" $EUSER
+      fi
+   fi
+fi
+
+if [ ! -z $EHOME ]; then
+   if [ $ECHOWNHOME = "yes" ]; then
+      # change ownership of home directory
+      chown $EUSER:$EGROUP $EHOME
+   fi
+fi
